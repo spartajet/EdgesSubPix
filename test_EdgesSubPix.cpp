@@ -7,6 +7,9 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
+#ifdef __GNUC__
+    printf("__GNUC__ = %d\n",__GNUC__);
+#endif
     ocl::setUseOpenCL(false);
     const String keys =
                         "{help h usage ? |          | print this message            }"
@@ -49,7 +52,7 @@ int main(int argc, char *argv[])
     vector<Contour> contours;
     vector<Vec4i> hierarchy;
     int64 t0 = getCPUTickCount();
-    EdgesSubPix(image, alpha, low, high, contours, hierarchy, mode);
+    EdgesSubPix(image, alpha, low, high, contours);
     int64 t1 = getCPUTickCount();
     cout << "execution time is " << (t1 - t0) / (double)getTickFrequency() << " seconds" << endl;
 
