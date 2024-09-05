@@ -26,7 +26,7 @@ void EdgesSubPix(cv::Mat &gray, double alpha, int low, int high,
                             std::vector<Contour> &contours, cv::OutputArray hierarchy,
                             int mode);
 
-extern "C" SUB_EDGE_EXPORT void EdgesSubPix(cv::Mat &gray, double alpha, int low, int high,
-                           std::vector<Contour> &contours);
+extern "C" SUB_EDGE_EXPORT std::vector<Contour> EdgesSubPix(cv::Mat &gray, double alpha, int low, int high);
+extern "C" SUB_EDGE_EXPORT std::vector<cv::Point2f> EdgesSubPixPoints(cv::Mat &gray, double alpha, int low, int high);
 
 #endif // __EDGES_SUBPIX_H__

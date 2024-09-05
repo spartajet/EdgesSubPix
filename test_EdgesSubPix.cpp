@@ -49,10 +49,10 @@ int main(int argc, char *argv[])
     int mode = parser.get<int>("mode");
 
     Mat image = imread(imageFile, IMREAD_GRAYSCALE);
-    vector<Contour> contours;
+    // vector<Contour> contours;
     vector<Vec4i> hierarchy;
     int64 t0 = getCPUTickCount();
-    EdgesSubPix(image, alpha, low, high, contours);
+    vector<Contour> contours= EdgesSubPix(image, alpha, low, high);
     int64 t1 = getCPUTickCount();
     cout << "execution time is " << (t1 - t0) / (double)getTickFrequency() << " seconds" << endl;
 

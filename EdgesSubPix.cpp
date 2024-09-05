@@ -5,7 +5,7 @@ using namespace cv;
 using namespace std;
 
 
-const double scale = 128.0;  // sum of half Canny filter is 128
+const double scale = 128.0; // sum of half Canny filter is 128
 
 static void getCannyKernel(OutputArray _d, double alpha)
 {
@@ -37,10 +37,10 @@ static void getCannyKernel(OutputArray _d, double alpha)
 }
 
 // non-maximum supression and hysteresis
-static void postCannyFilter(const Mat &src, Mat &dx, Mat &dy, int low, int high, Mat &dst)
+static void postCannyFilter(const Mat& src, Mat& dx, Mat& dy, int low, int high, Mat& dst)
 {
     ptrdiff_t mapstep = src.cols + 2;
-    AutoBuffer<uchar> buffer((src.cols + 2)*(src.rows + 2) + mapstep * 3 * sizeof(int));
+    AutoBuffer<uchar> buffer((src.cols + 2) * (src.rows + 2) + mapstep * 3 * sizeof(int));
 
     // L2Gradient comparison with square
     high = high * high;
@@ -50,16 +50,16 @@ static void postCannyFilter(const Mat &src, Mat &dx, Mat &dy, int low, int high,
     mag_buf[0] = (int*)(uchar*)buffer;
     mag_buf[1] = mag_buf[0] + mapstep;
     mag_buf[2] = mag_buf[1] + mapstep;
-    memset(mag_buf[0], 0, mapstep*sizeof(int));
+    memset(mag_buf[0], 0, mapstep * sizeof(int));
 
     uchar* map = (uchar*)(mag_buf[2] + mapstep);
     memset(map, 1, mapstep);
-    memset(map + mapstep*(src.rows + 1), 1, mapstep);
+    memset(map + mapstep * (src.rows + 1), 1, mapstep);
 
     int maxsize = std::max(1 << 10, src.cols * src.rows / 10);
     std::vector<uchar*> stack(maxsize);
-    uchar **stack_top = &stack[0];
-    uchar **stack_bottom = &stack[0];
+    uchar** stack_top = &stack[0];
+    uchar** stack_bottom = &stack[0];
 
     /* sector numbers
     (Top-Left Origin)
@@ -99,17 +99,17 @@ static void postCannyFilter(const Mat &src, Mat &dx, Mat &dy, int low, int high,
             {
                 for (; j <= width - 8; j += 8)
                 {
-                    __m128i v_dx = _mm_loadu_si128((const __m128i *)(_dx + j));
-                    __m128i v_dy = _mm_loadu_si128((const __m128i *)(_dy + j));
+                    __m128i v_dx = _mm_loadu_si128((const __m128i*)(_dx + j));
+                    __m128i v_dy = _mm_loadu_si128((const __m128i*)(_dy + j));
 
                     __m128i v_dx_ml = _mm_mullo_epi16(v_dx, v_dx), v_dx_mh = _mm_mulhi_epi16(v_dx, v_dx);
                     __m128i v_dy_ml = _mm_mullo_epi16(v_dy, v_dy), v_dy_mh = _mm_mulhi_epi16(v_dy, v_dy);
 
                     __m128i v_norm = _mm_add_epi32(_mm_unpacklo_epi16(v_dx_ml, v_dx_mh), _mm_unpacklo_epi16(v_dy_ml, v_dy_mh));
-                    _mm_storeu_si128((__m128i *)(_norm + j), v_norm);
+                    _mm_storeu_si128((__m128i*)(_norm + j), v_norm);
 
                     v_norm = _mm_add_epi32(_mm_unpackhi_epi16(v_dx_ml, v_dx_mh), _mm_unpackhi_epi16(v_dy_ml, v_dy_mh));
-                    _mm_storeu_si128((__m128i *)(_norm + j + 4), v_norm);
+                    _mm_storeu_si128((__m128i*)(_norm + j + 4), v_norm);
                 }
             }
 #elif CV_NEON
@@ -126,19 +126,19 @@ static void postCannyFilter(const Mat &src, Mat &dx, Mat &dy, int low, int high,
             }
 #endif
             for (; j < width; ++j)
-                _norm[j] = int(_dx[j])*_dx[j] + int(_dy[j])*_dy[j];
+                _norm[j] = int(_dx[j]) * _dx[j] + int(_dy[j]) * _dy[j];
 
             _norm[-1] = _norm[src.cols] = 0;
         }
         else
-            memset(_norm - 1, 0, /* cn* */mapstep*sizeof(int));
+            memset(_norm - 1, 0, /* cn* */mapstep * sizeof(int));
 
         // at the very beginning we do not have a complete ring
         // buffer of 3 magnitude rows for non-maxima suppression
         if (i == 0)
             continue;
 
-        uchar* _map = map + mapstep*i + 1;
+        uchar* _map = map + mapstep * i + 1;
         _map[-1] = _map[src.cols] = 1;
 
         int* _mag = mag_buf[1] + 1; // take the central row
@@ -160,8 +160,8 @@ static void postCannyFilter(const Mat &src, Mat &dx, Mat &dy, int low, int high,
         int prev_flag = 0;
         for (int j = 0; j < src.cols; j++)
         {
-            #define CANNY_SHIFT 15
-            const int TG22 = (int)(0.4142135623730950488016887242097*(1 << CANNY_SHIFT) + 0.5);
+#define CANNY_SHIFT 15
+            const int TG22 = (int)(0.4142135623730950488016887242097 * (1 << CANNY_SHIFT) + 0.5);
 
             int m = _mag[j];
 
@@ -227,14 +227,22 @@ static void postCannyFilter(const Mat &src, Mat &dx, Mat &dy, int low, int high,
 
         CANNY_POP(m);
 
-        if (!m[-1])         CANNY_PUSH(m - 1);
-        if (!m[1])          CANNY_PUSH(m + 1);
-        if (!m[-mapstep - 1]) CANNY_PUSH(m - mapstep - 1);
-        if (!m[-mapstep])   CANNY_PUSH(m - mapstep);
-        if (!m[-mapstep + 1]) CANNY_PUSH(m - mapstep + 1);
-        if (!m[mapstep - 1])  CANNY_PUSH(m + mapstep - 1);
-        if (!m[mapstep])    CANNY_PUSH(m + mapstep);
-        if (!m[mapstep + 1])  CANNY_PUSH(m + mapstep + 1);
+        if (!m[-1])
+            CANNY_PUSH(m - 1);
+        if (!m[1])
+            CANNY_PUSH(m + 1);
+        if (!m[-mapstep - 1])
+            CANNY_PUSH(m - mapstep - 1);
+        if (!m[-mapstep])
+            CANNY_PUSH(m - mapstep);
+        if (!m[-mapstep + 1])
+            CANNY_PUSH(m - mapstep + 1);
+        if (!m[mapstep - 1])
+            CANNY_PUSH(m + mapstep - 1);
+        if (!m[mapstep])
+            CANNY_PUSH(m + mapstep);
+        if (!m[mapstep + 1])
+            CANNY_PUSH(m + mapstep + 1);
     }
 
     // the final pass, form the final image
@@ -247,13 +255,13 @@ static void postCannyFilter(const Mat &src, Mat &dx, Mat &dy, int low, int high,
     }
 }
 
-static inline  double getAmplitude(Mat &dx, Mat &dy, int i, int j)
+static inline double getAmplitude(Mat& dx, Mat& dy, int i, int j)
 {
     Point2d mag(dx.at<short>(i, j), dy.at<short>(i, j));
     return norm(mag);
 }
 
-static inline void getMagNeighbourhood(Mat &dx, Mat &dy, Point &p, int w, int h, vector<double> &mag)
+static inline void getMagNeighbourhood(Mat& dx, Mat& dy, Point& p, int w, int h, vector<double>& mag)
 {
     int top = p.y - 1 >= 0 ? p.y - 1 : p.y;
     int down = p.y + 1 < h ? p.y + 1 : p.y;
@@ -271,7 +279,7 @@ static inline void getMagNeighbourhood(Mat &dx, Mat &dy, Point &p, int w, int h,
     mag[8] = getAmplitude(dx, dy, down, right);
 }
 
-static inline void get2ndFacetModelIn3x3(vector<double> &mag, vector<double> &a)
+static inline void get2ndFacetModelIn3x3(vector<double>& mag, vector<double>& a)
 {
     a[0] = (-mag[0] + 2.0 * mag[1] - mag[2] + 2.0 * mag[3] + 5.0 * mag[4] + 2.0 * mag[5] - mag[6] + 2.0 * mag[7] - mag[8]) / 9.0;
     a[1] = (-mag[0] + mag[2] - mag[3] + mag[5] - mag[6] + mag[8]) / 6.0;
@@ -280,12 +288,13 @@ static inline void get2ndFacetModelIn3x3(vector<double> &mag, vector<double> &a)
     a[4] = (-mag[0] + mag[2] + mag[6] - mag[8]) / 4.0;
     a[5] = (mag[0] + mag[1] + mag[2] - 2.0 * (mag[3] + mag[4] + mag[5]) + mag[6] + mag[7] + mag[8]) / 6.0;
 }
-/* 
+
+/*
    Compute the eigenvalues and eigenvectors of the Hessian matrix given by
    dfdrr, dfdrc, and dfdcc, and sort them in descending order according to
-   their absolute values. 
+   their absolute values.
 */
-static inline void eigenvals(vector<double> &a, double eigval[2], double eigvec[2][2])
+static inline void eigenvals(vector<double>& a, double eigval[2], double eigvec[2][2])
 {
     // derivatives
     // fx = a[1], fy = a[2]
@@ -298,16 +307,18 @@ static inline void eigenvals(vector<double> &a, double eigval[2], double eigvec[
     double theta, t, c, s, e1, e2, n1, n2; /* , phi; */
 
     /* Compute the eigenvalues and eigenvectors of the Hessian matrix. */
-    if (dfdrc != 0.0) {
-        theta = 0.5*(dfdcc - dfdrr) / dfdrc;
-        t = 1.0 / (fabs(theta) + sqrt(theta*theta + 1.0));
+    if (dfdrc != 0.0)
+    {
+        theta = 0.5 * (dfdcc - dfdrr) / dfdrc;
+        t = 1.0 / (fabs(theta) + sqrt(theta * theta + 1.0));
         if (theta < 0.0) t = -t;
-        c = 1.0 / sqrt(t*t + 1.0);
-        s = t*c;
-        e1 = dfdrr - t*dfdrc;
-        e2 = dfdcc + t*dfdrc;
+        c = 1.0 / sqrt(t * t + 1.0);
+        s = t * c;
+        e1 = dfdrr - t * dfdrc;
+        e2 = dfdcc + t * dfdrc;
     }
-    else {
+    else
+    {
         c = 1.0;
         s = 0.0;
         e1 = dfdrr;
@@ -319,7 +330,8 @@ static inline void eigenvals(vector<double> &a, double eigval[2], double eigvec[
     /* If the absolute value of an eigenvalue is larger than the other, put that
     eigenvalue into first position.  If both are of equal absolute value, put
     the negative one first. */
-    if (fabs(e1) > fabs(e2)) {
+    if (fabs(e1) > fabs(e2))
+    {
         eigval[0] = e1;
         eigval[1] = e2;
         eigvec[0][0] = n1;
@@ -327,7 +339,8 @@ static inline void eigenvals(vector<double> &a, double eigval[2], double eigvec[
         eigvec[1][0] = -n2;
         eigvec[1][1] = n1;
     }
-    else if (fabs(e1) < fabs(e2)) {
+    else if (fabs(e1) < fabs(e2))
+    {
         eigval[0] = e2;
         eigval[1] = e1;
         eigvec[0][0] = -n2;
@@ -335,8 +348,10 @@ static inline void eigenvals(vector<double> &a, double eigval[2], double eigvec[
         eigvec[1][0] = n1;
         eigvec[1][1] = n2;
     }
-    else {
-        if (e1 < e2) {
+    else
+    {
+        if (e1 < e2)
+        {
             eigval[0] = e1;
             eigval[1] = e2;
             eigvec[0][0] = n1;
@@ -344,7 +359,8 @@ static inline void eigenvals(vector<double> &a, double eigval[2], double eigvec[
             eigvec[1][0] = -n2;
             eigvec[1][1] = n1;
         }
-        else {
+        else
+        {
             eigval[0] = e2;
             eigval[1] = e1;
             eigvec[0][0] = -n2;
@@ -361,15 +377,15 @@ static inline double vector2angle(double x, double y)
     return a >= 0.0 ? a : a + CV_2PI;
 }
 
-void extractSubPixPoints(Mat &dx, Mat &dy, vector<vector<Point> > &contoursInPixel, vector<Contour> &contours)
+void extractSubPixPoints(Mat& dx, Mat& dy, vector<vector<Point>>& contoursInPixel, vector<Contour>& contours)
 {
     int w = dx.cols;
     int h = dx.rows;
     contours.resize(contoursInPixel.size());
     for (size_t i = 0; i < contoursInPixel.size(); ++i)
     {
-        vector<Point> &icontour = contoursInPixel[i];
-        Contour &contour = contours[i];
+        vector<Point>& icontour = contoursInPixel[i];
+        Contour& contour = contours[i];
         contour.points.resize(icontour.size());
         contour.response.resize(icontour.size());
         contour.direction.resize(icontour.size());
@@ -382,8 +398,8 @@ void extractSubPixPoints(Mat &dx, Mat &dy, vector<vector<Point> > &contoursInPix
             getMagNeighbourhood(dx, dy, icontour[j], w, h, magNeighbour);
             vector<double> a(9);
             get2ndFacetModelIn3x3(magNeighbour, a);
-           
-            // Hessian eigen vector 
+
+            // Hessian eigen vector
             double eigvec[2][2], eigval[2];
             eigenvals(a, eigval, eigvec);
             double t = 0.0;
@@ -399,7 +415,7 @@ void extractSubPixPoints(Mat &dx, Mat &dy, vector<vector<Point> > &contoursInPix
             float x = (float)icontour[j].x;
             float y = (float)icontour[j].y;
             if (fabs(px) <= 0.5 && fabs(py) <= 0.5)
-            { 
+            {
                 x += (float)px;
                 y += (float)py;
             }
@@ -413,8 +429,8 @@ void extractSubPixPoints(Mat &dx, Mat &dy, vector<vector<Point> > &contoursInPix
 //---------------------------------------------------------------------
 //          INTERFACE FUNCTION
 //---------------------------------------------------------------------
-void EdgesSubPix(Mat &gray, double alpha, int low, int high,
-    vector<Contour> &contours, OutputArray hierarchy, int mode)
+void EdgesSubPix(Mat& gray, double alpha, int low, int high,
+                 vector<Contour>& contours, OutputArray hierarchy, int mode)
 {
     Mat blur;
     GaussianBlur(gray, blur, Size(0, 0), alpha, alpha);
@@ -433,16 +449,33 @@ void EdgesSubPix(Mat &gray, double alpha, int low, int high,
     postCannyFilter(gray, dx, dy, lowThresh, highThresh, edge);
 
     // contours in pixel precision
-    vector<vector<Point> > contoursInPixel;
+    vector<vector<Point>> contoursInPixel;
     findContours(edge, contoursInPixel, hierarchy, mode, CHAIN_APPROX_NONE);
 
     // subpixel position extraction with steger's method and facet model 2nd polynominal in 3x3 neighbourhood
     extractSubPixPoints(dx, dy, contoursInPixel, contours);
-
 }
 
-void EdgesSubPix(Mat &gray, double alpha, int low, int high, vector<Contour> &contours)
+vector<Contour> EdgesSubPix(Mat& gray, double alpha, int low, int high)
 {
     vector<Vec4i> hierarchy;
+    vector<Contour> contours;
     EdgesSubPix(gray, alpha, low, high, contours, hierarchy, RETR_LIST);
+    return contours;
+}
+
+std::vector<Point2f> EdgesSubPixPoints(Mat& gray, double alpha, int low, int high)
+{
+    vector<Vec4i> hierarchy;
+    vector<Contour> contours;
+    vector<Point2f> points;
+    EdgesSubPix(gray, alpha, low, high, contours, hierarchy, RETR_LIST);
+    for (size_t i = 0; i < contours.size(); ++i)
+    {
+        for (size_t j = 0; j < contours[i].points.size(); ++j)
+        {
+            points.push_back(contours[i].points[j]);
+        }
+    }
+    return points;
 }
