@@ -464,15 +464,20 @@ vector<Contour> EdgesSubPix(Mat& gray, double alpha, int low, int high)
     return contours;
 }
 
-std::vector<Point2f> EdgesSubPixPoints(Mat& gray, double alpha, int low, int high)
+std::vector<Point2f> EdgesSubPixPoints(Mat& gray, double const alpha, int const low,const int high,const int thread_length,const int capacity)
 {
     vector<Vec4i> hierarchy;
     vector<Contour> contours;
-    vector<Point2f> points;
+    vector<Point2f> points(capacity);
+
+
     EdgesSubPix(gray, alpha, low, high, contours, hierarchy, RETR_LIST);
     for (size_t i = 0; i < contours.size(); ++i)
     {
-        for (size_t j = 0; j < contours[i].points.size(); ++j)
+        int len = contours[i].points.size();
+        if (len < thread_length)
+            continue;
+        for (size_t j = 0; j < len; ++j)
         {
             points.push_back(contours[i].points[j]);
         }

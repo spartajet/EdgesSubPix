@@ -3,17 +3,17 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 
-#ifndef SUB_EDGE_EXPORT
-# define SUB_EDGE_EXPORT
-#endif
+// #ifndef SUB_EDGE_EXPORT
+// # define SUB_EDGE_EXPORT
+// #endif
 
-#ifdef SUB_EDGE_EXPORT
+// #ifdef SUB_EDGE_EXPORT
 # if defined _WIN32 || defined WINCE || defined __CYGWIN__
-#   define CV_EXPORTS __declspec(dllexport)
+#   define SUB_EDGE_EXPORT __declspec(dllexport)
 # elif defined __GNUC__ && __GNUC__ >= 4
 #   define SUB_EDGE_EXPORT __attribute__ ((visibility ("default")))
 # endif
-#endif
+// #endif
 
 struct Contour
 {
@@ -27,6 +27,6 @@ void EdgesSubPix(cv::Mat &gray, double alpha, int low, int high,
                             int mode);
 
 extern "C" SUB_EDGE_EXPORT std::vector<Contour> EdgesSubPix(cv::Mat &gray, double alpha, int low, int high);
-extern "C" SUB_EDGE_EXPORT std::vector<cv::Point2f> EdgesSubPixPoints(cv::Mat &gray, double alpha, int low, int high);
+extern "C" SUB_EDGE_EXPORT std::vector<cv::Point2f> EdgesSubPixPoints(cv::Mat &gray, double alpha, int low, int high,int thread_length,int capacity);
 
 #endif // __EDGES_SUBPIX_H__
