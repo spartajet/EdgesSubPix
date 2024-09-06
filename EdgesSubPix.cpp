@@ -389,9 +389,9 @@ void extractSubPixPoints(Mat& dx, Mat& dy, vector<vector<Point>>& contoursInPixe
         contour.points.resize(icontour.size());
         contour.response.resize(icontour.size());
         contour.direction.resize(icontour.size());
-#if defined(_OPENMP) && defined(NDEBUG)
-#pragma omp parallel for
-#endif
+        // #if defined(_OPENMP) && defined(NDEBUG)
+        // #pragma omp parallel for
+        // #endif
         for (int j = 0; j < (int)icontour.size(); ++j)
         {
             vector<double> magNeighbour(9);
@@ -464,14 +464,27 @@ vector<Contour> EdgesSubPix(Mat& gray, double alpha, int low, int high)
     return contours;
 }
 
-std::vector<Point2f> EdgesSubPixPoints(Mat& gray, double const alpha, int const low,const int high,const int thread_length,const int capacity)
+PointResult EdgesSubPixPoints(void* data, int width, int height, double const alpha, int const low, const int high, const int thread_length, const int capacity)
 {
     vector<Vec4i> hierarchy;
     vector<Contour> contours;
-    vector<Point2f> points(capacity);
-
-
+    // vector<Point2f> points(capacity);
+    Mat gray(height, width,CV_8UC1, data);
     EdgesSubPix(gray, alpha, low, high, contours, hierarchy, RETR_LIST);
+    int total_length = 0;
+    for (size_t i = 0; i < contours.size(); ++i)
+    {
+        int len = contours[i].points.size();
+        if (len < thread_length)
+            continue;
+        total_length += contours[i].points.size();
+    }
+
+    auto* xs_value = new float[total_length];
+    auto* ys_value = new float[total_length];
+
+
+    int temp = 0;
     for (size_t i = 0; i < contours.size(); ++i)
     {
         int len = contours[i].points.size();
@@ -479,8 +492,18 @@ std::vector<Point2f> EdgesSubPixPoints(Mat& gray, double const alpha, int const 
             continue;
         for (size_t j = 0; j < len; ++j)
         {
-            points.push_back(contours[i].points[j]);
+            // points.push_back(contours[i].points[j]);
+            xs_value[temp] = contours[i].points[j].x;
+            ys_value[temp] = contours[i].points[j].y;
+            temp++;
         }
     }
-    return points;
+
+    return PointResult{xs_value, ys_value, total_length};
+}
+
+void freePointResult(PointResult* result)
+{
+    delete [] result->xs;
+    delete [] result->ys;
 }

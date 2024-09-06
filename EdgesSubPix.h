@@ -18,15 +18,25 @@
 struct Contour
 {
     std::vector<cv::Point2f> points;
-    std::vector<float> direction;  
+    std::vector<float> direction;
     std::vector<float> response;
 };
-// only 8-bit
-void EdgesSubPix(cv::Mat &gray, double alpha, int low, int high,
-                            std::vector<Contour> &contours, cv::OutputArray hierarchy,
-                            int mode);
 
-extern "C" SUB_EDGE_EXPORT std::vector<Contour> EdgesSubPix(cv::Mat &gray, double alpha, int low, int high);
-extern "C" SUB_EDGE_EXPORT std::vector<cv::Point2f> EdgesSubPixPoints(cv::Mat &gray, double alpha, int low, int high,int thread_length,int capacity);
+struct PointResult
+{
+    const float* xs;
+    const float* ys;
+    int length;
+};
+
+// only 8-bit
+void EdgesSubPix(cv::Mat& gray, double alpha, int low, int high,
+                 std::vector<Contour>& contours, cv::OutputArray hierarchy,
+                 int mode);
+
+extern "C" SUB_EDGE_EXPORT std::vector<Contour> EdgesSubPix(cv::Mat& gray, double alpha, int low, int high);
+extern "C" SUB_EDGE_EXPORT PointResult EdgesSubPixPoints(void* data, int width, int height, double alpha, int low, int high, int thread_length, int capacity);
+
+extern "C" SUB_EDGE_EXPORT void freePointResult(PointResult* result);
 
 #endif // __EDGES_SUBPIX_H__
